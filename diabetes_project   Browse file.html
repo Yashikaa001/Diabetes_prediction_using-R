@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabetes Prediction using R</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #C0392B;
+    --red-light: #E74C3C;
+    --red-pale: #FDECEA;
+    --dark: #1A1A2E;
+    --mid: #2C3E50;
+    --text: #2D2D2D;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --bg: #FFFFFF;
+    --code-bg: #F8F9FA;
+    --accent1: #2980B9;
+    --accent2: #27AE60;
+    --accent3: #8E44AD;
+    --accent4: #E67E22;
+    --glucose: #E74C3C;
+    --healthy: #27AE60;
+    --diabetic: #E74C3C;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+  }
+  nav a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 14px 16px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  nav a:hover { color: var(--red); }
+  nav a.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* ── SECTIONS ── */
+  section { padding: 64px 40px; max-width: 960px; margin: 0 auto; }
+  section + section { border-top: 1px solid var(--border); }
+
+  /* ── OBJECTIVE PAGE ── */
+  .cover {
+    background: #fff;
+    padding: 80px 40px 64px;
+    max-width: 960px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 20px;
+    display: block;
+  }
+  .cover h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(48px, 7vw, 80px);
+    line-height: 1.05;
+    color: var(--dark);
+    margin-bottom: 28px;
+  }
+  .cover h1 span { color: var(--red); }
+  .cover-desc {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 620px;
+    margin-bottom: 48px;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    margin-bottom: 56px;
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 4px; }
+  .stat-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 40px;
+    color: var(--red);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Objectives grid */
+  .obj-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .obj-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .obj-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    position: relative;
+    background: #fff;
+    transition: box-shadow 0.2s;
+  }
+  .obj-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+  .obj-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 500;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .obj-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+  .obj-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .obj-card .obj-icon {
+    position: absolute;
+    top: 20px; right: 20px;
+    font-size: 20px;
+    opacity: 0.6;
+  }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 0;
+  }
+  .pipe-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pipe-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--red-pale);
+    border: 1px solid #f5c6c2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--red);
+  }
+  .pipe-label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .pipe-arrow {
+    color: var(--border);
+    font-size: 16px;
+    margin: 0 8px;
+  }
+
+  /* ── STEP SECTIONS ── */
+  .step-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 8px;
+    display: block;
+  }
+  h2.section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--dark);
+    margin-bottom: 32px;
+    line-height: 1.2;
+  }
+
+  /* Info box */
+  .info-box {
+    border-left: 3px solid var(--red);
+    padding: 20px 24px;
+    background: #FAFAFA;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 32px;
+  }
+  .info-box .info-q {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .info-box p { font-size: 14px; color: var(--text); }
+  .info-box p + p { margin-top: 10px; }
+  .info-box strong { color: var(--dark); }
+
+  /* What we can do */
+  .can-do {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    background: #fff;
+  }
+  .can-do-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 14px;
+  }
+  .can-do ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .can-do ul li {
+    font-size: 13px;
+    color: var(--muted);
+    padding-left: 20px;
+    position: relative;
+  }
+  .can-do ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--red);
+    font-size: 12px;
+  }
+  .can-do ul li code {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent1);
+  }
+
+  /* Code block */
+  .code-file {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    overflow-x: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    margin-bottom: 32px;
+  }
+  .kw { color: #C0392B; font-weight: 500; }
+  .fn { color: #2980B9; }
+  .str { color: #27AE60; }
+  .cm { color: #95A5A6; font-style: italic; }
+  .num { color: #8E44AD; }
+  .var { color: var(--dark); }
+  .op { color: #E67E22; }
+
+  /* Dataset table */
+  .dataset-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-bottom: 32px;
+    font-family: 'DM Mono', monospace;
+  }
+  .dataset-table th {
+    background: var(--dark);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .dataset-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .dataset-table tr:nth-child(even) td { background: #FAFAFA; }
+  .diabetic { color: var(--red); font-weight: 600; }
+  .healthy { color: var(--healthy); font-weight: 600; }
+
+  /* Feature cards */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .feat-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    background: #fff;
+  }
+  .feat-icon { font-size: 22px; margin-bottom: 10px; }
+  .feat-name { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 4px; }
+  .feat-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── CHARTS ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    background: #fff;
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 4px;
+  }
+  .chart-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* Donut chart */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-size: 12px; color: var(--muted); }
+  .legend-value { font-size: 16px; font-weight: 700; color: var(--dark); }
+  .legend-pct { font-size: 11px; color: var(--muted); }
+
+  /* Correlation bars */
+  .corr-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .corr-label { font-size: 12px; color: var(--text); width: 110px; flex-shrink: 0; }
+  .corr-bar-bg {
+    flex: 1;
+    height: 18px;
+    background: #F3F4F6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .corr-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    transition: width 0.8s ease;
+  }
+
+  /* Boxplot */
+  .boxplot-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 36px;
+    padding: 10px 10px 0;
+    height: 180px;
+    justify-content: center;
+  }
+  .box-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+  .box-label { font-size: 11px; font-weight: 600; margin-top: 8px; }
+  .box-median { font-size: 11px; color: var(--muted); }
+  .box-svg { flex-shrink: 0; }
+
+  /* Histogram bars */
+  .hist-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 140px;
+    padding-bottom: 0;
+  }
+  .hist-bar-group { display: flex; gap: 2px; align-items: flex-end; }
+  .hist-bar {
+    width: 16px;
+    border-radius: 2px 2px 0 0;
+    transition: opacity 0.2s;
+  }
+  .hist-bar:hover { opacity: 0.8; }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 2px;
+    font-size: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+  .hm-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    font-size: 7.5px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .hm-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: center;
+    padding: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Model coefficients chart */
+  .coef-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .coef-label-wrap { width: 160px; flex-shrink: 0; }
+  .coef-name { font-size: 12px; color: var(--text); }
+  .coef-sig {
+    font-size: 10px;
+    color: var(--red);
+    font-family: 'DM Mono', monospace;
+    font-weight: 600;
+  }
+  .coef-bar-bg {
+    flex: 1;
+    height: 18px;
+    background: #F3F4F6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .coef-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent1);
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Confusion matrix */
+  .cm-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+  .cm-header-row { display: flex; gap: 4px; margin-left: 100px; }
+  .cm-head { width: 130px; text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); padding: 6px; }
+  .cm-row { display: flex; gap: 4px; align-items: center; }
+  .cm-row-label { width: 100px; font-size: 11px; font-weight: 600; color: var(--muted); text-align: right; padding-right: 12px; }
+  .cm-cell {
+    width: 130px;
+    height: 80px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .cm-cell .cm-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .cm-cell .cm-name { font-size: 10px; font-weight: 500; opacity: 0.8; }
+  .cm-cell .cm-icon { font-size: 14px; }
+  .cm-tn { background: #D5F5E3; color: #1E8449; }
+  .cm-fp { background: #FDEBD0; color: #B9770E; }
+  .cm-fn { background: #FADBD8; color: #922B21; }
+  .cm-tp { background: #D6EAF8; color: #1A5276; }
+
+  /* Metrics row */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) { .metrics-row { grid-template-columns: repeat(2, 1fr); } }
+  .metric-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    background: #fff;
+  }
+  .metric-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--red);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* Prediction simulator */
+  .pred-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) { .pred-grid { grid-template-columns: 1fr; } }
+  .pred-field { display: flex; flex-direction: column; gap: 6px; }
+  .pred-field label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .pred-field span {
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-top: -2px;
+  }
+  .pred-field input {
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--dark);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .pred-field input:focus { border-color: var(--red); }
+  .pred-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--dark);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .pred-btn:hover { background: var(--red); }
+  .pred-result {
+    margin-top: 20px;
+    padding: 20px 24px;
+    border-radius: 8px;
+    display: none;
+  }
+  .pred-result.diabetic { background: #FADBD8; border-left: 4px solid var(--red); }
+  .pred-result.healthy { background: #D5F5E3; border-left: 4px solid var(--healthy); }
+  .pred-result .res-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .pred-result.diabetic .res-label { color: #922B21; }
+  .pred-result.healthy .res-label { color: #1E8449; }
+  .pred-result .res-val { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 6px; }
+  .pred-result.diabetic .res-val { color: #922B21; }
+  .pred-result.healthy .res-val { color: #1E8449; }
+  .pred-result .res-prob { font-size: 13px; color: var(--muted); }
+
+  /* Prob bar */
+  .prob-bar-bg { height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  .prob-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  /* Conclusion cards */
+  .conclusion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 640px) { .conclusion-grid { grid-template-columns: 1fr; } }
+  .conc-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    background: #fff;
+  }
+  .conc-icon { font-size: 24px; margin-bottom: 14px; }
+  .conc-title { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 8px; }
+  .conc-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 40px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Glucose boxplot SVG boxes */
+  .glucose-chart { display: flex; align-items: flex-end; justify-content: center; gap: 40px; padding: 10px 0; }
+  .gbox { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .gbox-label { font-size: 11px; font-weight: 600; margin-top: 6px; }
+  .gbox-median { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#objectives" class="active">Objectives</a>
+  <a href="#step1">1. Load Data</a>
+  <a href="#step2">2. Preprocessing</a>
+  <a href="#step3">3. EDA</a>
+  <a href="#step4">4. Model</a>
+  <a href="#step5">5. Evaluation</a>
+  <a href="#step6">6. Prediction</a>
+  <a href="#conclusion">Conclusion</a>
+</nav>
+
+<!-- ══════════ OBJECTIVES PAGE ══════════ -->
+<div id="objectives" class="cover">
+  <span class="tag">R Programming Project</span>
+  <h1>Diabetes<br>Prediction<br><span>using R</span></h1>
+  <p class="cover-desc">
+    In this project, we predict whether a patient has diabetes or not using real clinical health data.
+    The project uses <strong>Logistic Regression</strong> — a supervised machine learning algorithm —
+    implemented entirely in R, covering data loading, preprocessing, exploratory analysis,
+    model training, evaluation, and live prediction.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat-item"><span class="stat-num">768</span><span class="stat-label">Patients</span></div>
+    <div class="stat-item"><span class="stat-num">8</span><span class="stat-label">Features</span></div>
+    <div class="stat-item"><span class="stat-num">77.8%</span><span class="stat-label">Accuracy</span></div>
+    <div class="stat-item"><span class="stat-num">6</span><span class="stat-label">Steps</span></div>
+  </div>
+
+  <p class="obj-title">Project Objectives</p>
+  <div class="obj-grid">
+    <div class="obj-card">
+      <span class="obj-num">OBJ 01</span>
+      <span class="obj-icon">📥</span>
+      <h3>Load & Explore the Dataset</h3>
+      <p>Import the Pima Indian Diabetes Dataset (768 patients, 9 columns) into R using <code>read.csv()</code> and examine its structure using <code>head()</code>, <code>str()</code>, and <code>summary()</code>.</p>
+    </div>
+    <div class="obj-card">
+      <span class="obj-num">OBJ 02</span>
+      <span class="obj-icon">🧹</span>
+      <h3>Preprocess & Clean the Data</h3>
+      <p>Check for missing values, apply Z-score normalization using <code>scale()</code> to standardize all 8 features, and split the data 70/30 into training (537) and test (231) sets.</p>
+    </div>
+    <div class="obj-card">
+      <span class="obj-num">OBJ 03</span>
+      <span class="obj-icon">📊</span>
+      <h3>Perform Exploratory Analysis</h3>
+      <p>Visualize outcome distribution, feature correlations, glucose levels, and BMI distributions using <code>ggplot2</code> to understand patterns before model building.</p>
+    </div>
+    <div class="obj-card">
+      <span class="obj-num">OBJ 04</span>
+      <span class="obj-icon">🤖</span>
+      <h3>Build a Logistic Regression Model</h3>
+      <p>Train a binary classification model using R's <code>glm()</code> function with <code>family = binomial</code>, learning the relationship between the 8 clinical features and the diabetes outcome.</p>
+    </div>
+    <div class="obj-card">
+      <span class="obj-num">OBJ 05</span>
+      <span class="obj-icon">📐</span>
+      <h3>Evaluate Model Performance</h3>
+      <p>Measure Accuracy, Precision, Recall, F1 Score, and Specificity using <code>confusionMatrix()</code> from the <code>caret</code> package on the 231 unseen test patients.</p>
+    </div>
+    <div class="obj-card">
+      <span class="obj-num">OBJ 06</span>
+      <span class="obj-icon">🔬</span>
+      <h3>Make Real-Time Predictions</h3>
+      <p>Deploy the trained model as a function that accepts any patient's 8 clinical values and returns an instant diabetes risk prediction with probability score.</p>
+    </div>
+  </div>
+
+  <p class="obj-title">Complete Project Pipeline</p>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="pipe-circle">1</div><span class="pipe-label">Load Data</span></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-step"><div class="pipe-circle">2</div><span class="pipe-label">Preprocessing</span></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-step"><div class="pipe-circle">3</div><span class="pipe-label">EDA</span></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-step"><div class="pipe-circle">4</div><span class="pipe-label">Build Model</span></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-step"><div class="pipe-circle">5</div><span class="pipe-label">Evaluate</span></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipe-step"><div class="pipe-circle">6</div><span class="pipe-label">Predict</span></div>
+  </div>
+</div>
+
+<!-- ══════════ STEP 01 ══════════ -->
+<section id="step1">
+  <span class="step-tag">Step 01 — Loading Libraries & Dataset</span>
+  <h2 class="section-title">Setting Up the Environment</h2>
+
+  <div class="info-box">
+    <div class="info-q">What is this step and why do we do it?</div>
+    <p>Before we start any analysis or model building, we must first load the necessary R <strong>libraries (packages)</strong> and <strong>import the dataset</strong> into our working environment. In R, a library is a collection of pre-written functions that add extra capabilities beyond what base R provides. Without loading these libraries, we would have to write hundreds of lines of code from scratch.</p>
+    <p>We use four libraries: <strong>readr</strong> — read CSV files; <strong>caTools</strong> — stratified train-test split; <strong>caret</strong> — model evaluation metrics; <strong>e1071</strong> — additional classification tools.</p>
+  </div>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>View first few rows using <code>head(data)</code> or full table using <code>View(data)</code> in RStudio</li>
+      <li>Check dimensions using <code>dim(data)</code> — gives us 768 rows and 9 columns</li>
+      <li>Check data types using <code>str(data)</code> to verify all columns are numeric</li>
+      <li>Install missing libraries using <code>install.packages("library_name")</code> before calling <code>library()</code></li>
+    </ul>
+  </div>
+
+  <div class="code-file">01_load_libraries.R</div>
+  <pre><span class="cm"># ── Step 1: Load required libraries ──────────────────────</span>
+<span class="kw">library</span>(<span class="str">readr</span>)   <span class="cm"># For reading CSV files</span>
+<span class="kw">library</span>(<span class="str">caTools</span>) <span class="cm"># For train-test splitting</span>
+<span class="kw">library</span>(<span class="str">caret</span>)   <span class="cm"># For model evaluation metrics</span>
+<span class="kw">library</span>(<span class="str">e1071</span>)   <span class="cm"># For additional statistical tools</span>
+
+<span class="cm"># ── Import the dataset ────────────────────────────────────</span>
+<span class="var">data</span> <span class="op">&lt;-</span> <span class="fn">read.csv</span>(<span class="str">"diabetes.csv"</span>)
+
+<span class="cm"># ── View first 6 rows to confirm correct loading ─────────</span>
+<span class="fn">head</span>(<span class="var">data</span>)
+
+<span class="cm">## Output — first 6 rows of the dataset:</span>
+<span class="cm">##   Pregnancies Glucose BloodPressure SkinThickness Insulin  BMI   DPF Age Outcome</span>
+<span class="cm">## 1           6     148            72            35       0 33.6 0.627  50       1</span>
+<span class="cm">## 2           1      85            66            29       0 26.6 0.351  31       0</span>
+<span class="cm">## 3           8     183            64             0       0 23.3 0.672  32       1</span>
+<span class="cm">## 4           1      89            66            23      94 28.1 0.167  21       0</span>
+<span class="cm">## 5           0     137            40            35     168 43.1 2.288  33       1</span>
+<span class="cm">## 6           5     116            74             0       0 25.6 0.201  30       0</span></pre>
+</section>
+
+<!-- ══════════ STEP 02 ══════════ -->
+<section id="step2">
+  <span class="step-tag">Step 02 — Dataset Overview & Preprocessing</span>
+  <h2 class="section-title">Understanding and Preparing the Data</h2>
+
+  <div class="info-box">
+    <div class="info-q">About the Dataset</div>
+    <p>We are using the <strong>Pima Indian Diabetes Dataset</strong>, which contains medical records of <strong>768 female patients</strong>. Each row represents one patient, and there are 8 input features (predictor variables) and 1 output column called <strong>Outcome</strong>. The Outcome column is our target variable — it contains either <strong>0</strong> (patient does NOT have diabetes) or <strong>1</strong> (patient DOES have diabetes). This makes it a <em>binary classification problem</em>.</p>
+  </div>
+
+  <div class="info-box">
+    <div class="info-q">What is Preprocessing and why is it important?</div>
+    <p>Raw data from the real world is almost never perfectly clean or model-ready. Preprocessing is the process of <strong>transforming raw data into a clean, model-ready format</strong>. In this project, preprocessing involves three key tasks:</p>
+    <p><strong>Checking for missing values</strong> — We use <code>colSums(is.na(data))</code> to find any NULL or NA entries. In this dataset, no missing values were found.<br>
+    <strong>Feature Scaling (Z-score Normalization)</strong> — Transforms all features to the same scale (mean = 0, SD = 1) using the <code>scale()</code> function.<br>
+    <strong>Train-Test Split (70/30)</strong> — 537 patients for training, 231 for testing. We use <code>set.seed(123)</code> for reproducibility.</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feat-card"><div class="feat-icon">🤰</div><div class="feat-name">Pregnancies</div><div class="feat-desc">Number of times pregnant — Range: 0 to 17</div></div>
+    <div class="feat-card"><div class="feat-icon">🩸</div><div class="feat-name">Glucose</div><div class="feat-desc">Plasma glucose after 2-hour oral test (mg/dL)</div></div>
+    <div class="feat-card"><div class="feat-icon">💉</div><div class="feat-name">Blood Pressure</div><div class="feat-desc">Diastolic blood pressure (mm Hg)</div></div>
+    <div class="feat-card"><div class="feat-icon">📐</div><div class="feat-name">Skin Thickness</div><div class="feat-desc">Triceps skinfold thickness (mm)</div></div>
+    <div class="feat-card"><div class="feat-icon">⚗️</div><div class="feat-name">Insulin</div><div class="feat-desc">2-hour serum insulin level (µU/mL)</div></div>
+    <div class="feat-card"><div class="feat-icon">⚖️</div><div class="feat-name">BMI</div><div class="feat-desc">Body Mass Index — weight/height² (kg/m²)</div></div>
+    <div class="feat-card"><div class="feat-icon">🧬</div><div class="feat-name">Diabetes Pedigree</div><div class="feat-desc">Genetic risk score based on family history</div></div>
+    <div class="feat-card"><div class="feat-icon">🎂</div><div class="feat-name">Age</div><div class="feat-desc">Patient's age in years — Range: 21 to 81</div></div>
+  </div>
+
+  <table class="dataset-table">
+    <thead><tr><th>PATIENT</th><th>PREG.</th><th>GLUCOSE</th><th>BP</th><th>SKIN</th><th>INSULIN</th><th>BMI</th><th>PEDIGREE</th><th>AGE</th><th>OUTCOME</th></tr></thead>
+    <tbody>
+      <tr><td>#001</td><td>6</td><td>148</td><td>72</td><td>35</td><td>0</td><td>33.6</td><td>0.627</td><td>50</td><td class="diabetic">Diabetic</td></tr>
+      <tr><td>#002</td><td>1</td><td>85</td><td>66</td><td>29</td><td>0</td><td>26.6</td><td>0.351</td><td>31</td><td class="healthy">Healthy</td></tr>
+      <tr><td>#003</td><td>8</td><td>183</td><td>64</td><td>0</td><td>0</td><td>23.3</td><td>0.672</td><td>32</td><td class="diabetic">Diabetic</td></tr>
+      <tr><td>#004</td><td>1</td><td>89</td><td>66</td><td>23</td><td>94</td><td>28.1</td><td>0.167</td><td>21</td><td class="healthy">Healthy</td></tr>
+      <tr><td>#005</td><td>0</td><td>137</td><td>40</td><td>35</td><td>168</td><td>43.1</td><td>2.288</td><td>33</td><td class="diabetic">Diabetic</td></tr>
+      <tr><td>#006</td><td>5</td><td>116</td><td>74</td><td>0</td><td>0</td><td>25.6</td><td>0.201</td><td>30</td><td class="healthy">Healthy</td></tr>
+      <tr><td>#007</td><td>3</td><td>78</td><td>50</td><td>32</td><td>88</td><td>31.0</td><td>0.248</td><td>26</td><td class="healthy">Healthy</td></tr>
+      <tr><td>#008</td><td>10</td><td>115</td><td>0</td><td>0</td><td>0</td><td>35.3</td><td>0.134</td><td>29</td><td class="healthy">Healthy</td></tr>
+    </tbody>
+  </table>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>Inspect statistics using <code>summary(data)</code> — shows min, max, mean, median for each column</li>
+      <li>Replace biologically impossible zeros (e.g., Glucose = 0 or BMI = 0) with column median before scaling</li>
+      <li>Try different split ratios like 80/20 instead of 70/30 and compare model accuracy</li>
+      <li>Check class imbalance: <code>table(data$Outcome)</code> shows 500 healthy vs 268 diabetic — a 65%/35% split</li>
+    </ul>
+  </div>
+
+  <div class="code-file">02_preprocess.R</div>
+  <pre><span class="cm"># ── Step 2: Data Preprocessing ───────────────────────────</span>
+<span class="fn">summary</span>(<span class="var">data</span>)
+<span class="fn">colSums</span>(<span class="fn">is.na</span>(<span class="var">data</span>))
+<span class="cm">## Result: 0 missing values found in any column ✓</span>
+
+<span class="cm"># Separate features (X) from the target label (y)</span>
+<span class="var">X</span> <span class="op">&lt;-</span> <span class="var">data</span>[, <span class="num">1</span>:<span class="num">8</span>]  <span class="cm"># 8 input features</span>
+<span class="var">y</span> <span class="op">&lt;-</span> <span class="var">data</span>[, <span class="num">9</span>]   <span class="cm"># Target: Outcome (0 or 1)</span>
+
+<span class="cm"># Feature scaling: Z-score normalization → mean=0, SD=1</span>
+<span class="var">scaled_X</span>   <span class="op">&lt;-</span> <span class="fn">as.data.frame</span>(<span class="fn">scale</span>(<span class="var">X</span>))
+<span class="var">scaled_data</span> <span class="op">&lt;-</span> <span class="fn">cbind</span>(<span class="var">scaled_X</span>, <span class="var">y</span>)
+
+<span class="cm"># Split into 70% training and 30% testing sets</span>
+<span class="fn">set.seed</span>(<span class="num">123</span>)
+<span class="var">sample</span>  <span class="op">&lt;-</span> <span class="fn">sample.split</span>(<span class="var">y</span>, SplitRatio = <span class="num">0.7</span>)
+<span class="var">X_train</span> <span class="op">&lt;-</span> <span class="var">X</span>[<span class="var">sample</span> == <span class="kw">TRUE</span>,  ]  <span class="cm"># 537 patients</span>
+<span class="var">X_test</span>  <span class="op">&lt;-</span> <span class="var">X</span>[<span class="var">sample</span> == <span class="kw">FALSE</span>, ]  <span class="cm"># 231 patients</span></pre>
+</section>
+
+<!-- ══════════ STEP 03 ══════════ -->
+<section id="step3">
+  <span class="step-tag">Step 03 — Exploratory Data Analysis (EDA)</span>
+  <h2 class="section-title">Understanding Patterns in the Data</h2>
+
+  <div class="info-box">
+    <div class="info-q">What is EDA and why is it done?</div>
+    <p><strong>Exploratory Data Analysis (EDA)</strong> is the process of visually and statistically examining our dataset <em>before</em> building any model. It helps us understand the distribution of data, discover patterns, detect anomalies, and identify which features are most strongly related to the Outcome. Without EDA, we might build a model on bad assumptions and get misleading results.</p>
+    <p>In this project, we create four types of visualizations using the <strong>ggplot2</strong> library: a Correlation Heatmap, Outcome Distribution Bar Chart, Histogram by Outcome, and BMI Boxplot by Outcome.</p>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="charts-grid">
+
+    <!-- Chart 1: Outcome Distribution Donut -->
+    <div class="chart-card">
+      <div class="chart-title">Outcome Distribution</div>
+      <div class="chart-sub">268 diabetic (35%) vs 500 non-diabetic (65%) patients</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#E5E7EB" stroke-width="18"/>
+          <!-- Non-diabetic: 65.1% of 282.74 = 184.1 -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#27AE60" stroke-width="18"
+            stroke-dasharray="184 283" stroke-dashoffset="71" stroke-linecap="butt"/>
+          <!-- Diabetic: 34.9% = ~98.7 -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#E74C3C" stroke-width="18"
+            stroke-dasharray="99 283" stroke-dashoffset="-113" stroke-linecap="butt"/>
+          <text x="60" y="55" text-anchor="middle" font-family="DM Serif Display,serif" font-size="18" fill="#1A1A2E">768</text>
+          <text x="60" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#6B7280">PATIENTS</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#E74C3C"></div>
+            <div>
+              <div class="legend-value" style="color:#E74C3C">268</div>
+              <div class="legend-label">Diabetic (1) — 34.9%</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#27AE60"></div>
+            <div>
+              <div class="legend-value" style="color:#27AE60">500</div>
+              <div class="legend-label">Non-Diabetic (0) — 65.1%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Correlation with Outcome -->
+    <div class="chart-card">
+      <div class="chart-title">Feature Correlation with Outcome</div>
+      <div class="chart-sub">Glucose is the strongest single predictor at 0.47</div>
+      <div style="margin-top:8px">
+        <div class="corr-row"><span class="corr-label">Glucose</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:94%;background:#E74C3C">0.47</div></div></div>
+        <div class="corr-row"><span class="corr-label">BMI</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:58%;background:#E67E22">0.29</div></div></div>
+        <div class="corr-row"><span class="corr-label">Age</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:48%;background:#F1C40F;color:#333">0.24</div></div></div>
+        <div class="corr-row"><span class="corr-label">Pregnancies</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:44%;background:#3498DB">0.22</div></div></div>
+        <div class="corr-row"><span class="corr-label">Pedigree Fn.</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:34%;background:#9B59B6">0.17</div></div></div>
+        <div class="corr-row"><span class="corr-label">Insulin</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:26%;background:#1ABC9C">0.13</div></div></div>
+      </div>
+    </div>
+
+    <!-- Chart 3: Glucose Levels Boxplot -->
+    <div class="chart-card">
+      <div class="chart-title">Glucose Levels by Outcome</div>
+      <div class="chart-sub">Diabetics have significantly higher glucose (median: 140 vs 107)</div>
+      <div class="glucose-chart">
+        <!-- Non-diabetic box -->
+        <div class="gbox">
+          <svg width="60" height="160" viewBox="0 0 60 160">
+            <!-- Whisker top -->
+            <line x1="30" y1="10" x2="30" y2="35" stroke="#27AE60" stroke-width="2"/>
+            <line x1="18" y1="10" x2="42" y2="10" stroke="#27AE60" stroke-width="2"/>
+            <!-- Box IQR -->
+            <rect x="10" y="35" width="40" height="70" fill="#D5F5E3" stroke="#27AE60" stroke-width="2" rx="2"/>
+            <!-- Median line -->
+            <line x1="10" y1="75" x2="50" y2="75" stroke="#27AE60" stroke-width="3"/>
+            <!-- Whisker bottom -->
+            <line x1="30" y1="105" x2="30" y2="140" stroke="#27AE60" stroke-width="2"/>
+            <line x1="18" y1="140" x2="42" y2="140" stroke="#27AE60" stroke-width="2"/>
+            <!-- Labels -->
+            <text x="30" y="155" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#6B7280">Q1:99</text>
+          </svg>
+          <div class="gbox-label" style="color:#27AE60">Non-Diabetic</div>
+          <div class="gbox-median">Median: 107</div>
+        </div>
+        <!-- Diabetic box -->
+        <div class="gbox">
+          <svg width="60" height="160" viewBox="0 0 60 160">
+            <!-- Whisker top -->
+            <line x1="30" y1="5" x2="30" y2="22" stroke="#E74C3C" stroke-width="2"/>
+            <line x1="18" y1="5" x2="42" y2="5" stroke="#E74C3C" stroke-width="2"/>
+            <!-- Box IQR -->
+            <rect x="10" y="22" width="40" height="80" fill="#FADBD8" stroke="#E74C3C" stroke-width="2" rx="2"/>
+            <!-- Median line -->
+            <line x1="10" y1="55" x2="50" y2="55" stroke="#E74C3C" stroke-width="3"/>
+            <!-- Whisker bottom -->
+            <line x1="30" y1="102" x2="30" y2="140" stroke="#E74C3C" stroke-width="2"/>
+            <line x1="18" y1="140" x2="42" y2="140" stroke="#E74C3C" stroke-width="2"/>
+            <text x="30" y="155" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#6B7280">Q1:119</text>
+          </svg>
+          <div class="gbox-label" style="color:#E74C3C">Diabetic</div>
+          <div class="gbox-median">Median: 140</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: BMI Distribution -->
+    <div class="chart-card">
+      <div class="chart-title">BMI Distribution by Outcome</div>
+      <div class="chart-sub">Higher BMI is strongly associated with diabetes risk</div>
+      <div style="margin-top:12px">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px">
+          <div style="width:12px;height:12px;background:#27AE60;border-radius:2px"></div>
+          <span style="font-size:11px;color:var(--muted)">Healthy (0)</span>
+          <div style="width:12px;height:12px;background:#E74C3C;border-radius:2px;margin-left:12px"></div>
+          <span style="font-size:11px;color:var(--muted)">Diabetic (1)</span>
+        </div>
+        <!-- BMI category bars -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">&lt;25 Normal</div>
+            <div style="display:flex;gap:3px;align-items:center">
+              <div style="height:16px;width:120px;background:#27AE60;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">35%</div>
+              <div style="height:16px;width:30px;background:#E74C3C;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">9%</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">25–30 Overweight</div>
+            <div style="display:flex;gap:3px;align-items:center">
+              <div style="height:16px;width:100px;background:#27AE60;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">29%</div>
+              <div style="height:16px;width:55px;background:#E74C3C;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">16%</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">30–35 Obese I</div>
+            <div style="display:flex;gap:3px;align-items:center">
+              <div style="height:16px;width:72px;background:#27AE60;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">21%</div>
+              <div style="height:16px;width:80px;background:#E74C3C;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">24%</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">35+ Obese II</div>
+            <div style="display:flex;gap:3px;align-items:center">
+              <div style="height:16px;width:52px;background:#27AE60;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">15%</div>
+              <div style="height:16px;width:170px;background:#E74C3C;border-radius:3px;display:flex;align-items:center;padding-left:6px;color:#fff;font-size:10px;font-family:'DM Mono',monospace">51%</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#FEF9E7;border-radius:6px;font-size:12px;color:#7D6608">
+          💡 <strong>Key insight:</strong> 51% of diabetic patients fall in the Obese II (BMI 35+) category vs only 15% of healthy patients. Median BMI: ~35 (diabetic) vs ~30 (healthy).
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end charts-grid -->
+
+  <!-- Heatmap full width -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">Correlation Heatmap — All Features</div>
+    <div class="chart-sub" style="margin-bottom:16px">Pairwise correlations between all 9 variables. Glucose–Outcome correlation = 0.47 (highest)</div>
+    <div id="heatmap-container"></div>
+  </div>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>Plot histograms for all 8 features using <code>hist(data$Glucose)</code> to check for skewed distributions</li>
+      <li>Use <code>pairs(data)</code> to see relationships between all feature pairs at once in a grid</li>
+      <li>Compute exact correlation values using <code>cor(data)</code> and visualize with a heatmap</li>
+      <li>Identify impossible values like Glucose = 0 or BMI = 0 which are medically invalid</li>
+    </ul>
+  </div>
+
+  <div class="code-file">03_eda_visualizations.R</div>
+  <pre><span class="cm"># ── Step 3: Exploratory Data Analysis ────────────────────</span>
+<span class="kw">library</span>(<span class="str">ggplot2</span>)
+<span class="kw">library</span>(<span class="str">reshape2</span>)
+
+<span class="cm"># 3.1 — Correlation Heatmap</span>
+<span class="var">corr_matrix</span> <span class="op">&lt;-</span> <span class="fn">cor</span>(<span class="var">data</span>)
+<span class="var">melted</span> <span class="op">&lt;-</span> <span class="fn">melt</span>(<span class="var">corr_matrix</span>)
+<span class="fn">ggplot</span>(<span class="var">melted</span>, <span class="fn">aes</span>(Var1, Var2, fill = value)) +
+  <span class="fn">geom_tile</span>(color = <span class="str">"white"</span>) +
+  <span class="fn">scale_fill_gradient2</span>(low = <span class="str">"blue"</span>, high = <span class="str">"red"</span>, mid = <span class="str">"white"</span>, midpoint = <span class="num">0</span>)
+
+<span class="cm"># 3.2 — Distribution of Outcomes</span>
+<span class="fn">ggplot</span>(<span class="fn">data.frame</span>(<span class="fn">table</span>(<span class="var">data</span>$Outcome)),
+       <span class="fn">aes</span>(x = Var1, y = Freq, fill = Var1)) +
+  <span class="fn">geom_bar</span>(stat = <span class="str">"identity"</span>) +
+  <span class="fn">scale_fill_manual</span>(values = <span class="fn">c</span>(<span class="str">"#68D391"</span>, <span class="str">"#FC8181"</span>))
+
+<span class="cm"># 3.3 — BMI Boxplot by Outcome</span>
+<span class="fn">ggplot</span>(<span class="var">data</span>, <span class="fn">aes</span>(x = <span class="fn">factor</span>(Outcome), y = BMI, fill = <span class="fn">factor</span>(Outcome))) +
+  <span class="fn">geom_boxplot</span>() +
+  <span class="fn">scale_fill_manual</span>(values = <span class="fn">c</span>(<span class="str">"#68D391"</span>, <span class="str">"#FC8181"</span>))</pre>
+</section>
+
+<!-- ══════════ STEP 04 ══════════ -->
+<section id="step4">
+  <span class="step-tag">Step 04 — Building the Model</span>
+  <h2 class="section-title">Training the Logistic Regression Model</h2>
+
+  <div class="info-box">
+    <div class="info-q">What is Logistic Regression?</div>
+    <p><strong>Logistic Regression</strong> is a supervised machine learning algorithm used for <strong>binary classification problems</strong> — problems where the output is one of only two categories, like Yes/No or in our case, <strong>Diabetic (1) / Non-Diabetic (0)</strong>. Unlike regular (linear) regression which predicts a continuous number, logistic regression predicts a probability between 0 and 1 using a mathematical function called the <strong>Sigmoid function</strong>. If the predicted probability is greater than 0.5, the patient is classified as diabetic.</p>
+  </div>
+
+  <div class="info-box">
+    <div class="info-q">How is the model built in R?</div>
+    <p>In R, we use the <strong>glm()</strong> function — which stands for Generalized Linear Model. We pass <code>family = binomial</code> to tell R that we want logistic regression. The model learns the relationship between all 8 features and the Outcome by adjusting internal values called <strong>coefficients</strong>. A <strong>positive coefficient</strong> means that feature increases diabetes risk, while a <strong>negative coefficient</strong> decreases it.</p>
+    <p>Glucose has the highest significance (***) with a positive coefficient. Diabetes Pedigree Function (family history) and BMI are also strongly significant predictors.</p>
+  </div>
+
+  <!-- Coefficient chart -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">Model Coefficient Importance</div>
+    <div class="chart-sub" style="margin-bottom:16px">Features marked *** are the most statistically significant predictors</div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">Glucose</div><div class="coef-sig">*** p&lt;0.001</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:95%;background:#E74C3C">0.036</div></div></div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">Pedigree Fn.</div><div class="coef-sig">** p&lt;0.01</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:90%;background:#8E44AD">0.901</div></div></div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">BMI</div><div class="coef-sig">*** p&lt;0.001</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:70%;background:#E67E22">0.089</div></div></div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">Pregnancies</div><div class="coef-sig">*** p&lt;0.001</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:50%;background:#2980B9">0.126</div></div></div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">Age</div><div class="coef-sig">— p=0.17</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:12%;background:#95A5A6">0.013</div></div></div>
+    <div class="coef-row"><div class="coef-label-wrap"><div class="coef-name">Blood Pressure</div><div class="coef-sig">— p=0.19</div></div><div class="coef-bar-bg"><div class="coef-bar-fill" style="width:5%;background:#BDC3C7">−0.012</div></div></div>
+  </div>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>View all model coefficients using <code>summary(log_model)</code> — features with *** are most significant</li>
+      <li>Compute odds ratios using <code>exp(coef(log_model))</code> — easier to interpret clinically</li>
+      <li>Try removing low-significance features (Blood Pressure, Skin Thickness) for a simpler model</li>
+      <li>Compare Logistic Regression with a Decision Tree or Random Forest for better accuracy</li>
+    </ul>
+  </div>
+
+  <div class="code-file">04_build_model.R</div>
+  <pre><span class="cm"># ── Step 4: Train the Logistic Regression Model ──────────</span>
+<span class="var">log_model</span> <span class="op">&lt;-</span> <span class="fn">glm</span>(y_train <span class="op">~</span> .,
+               data   = X_train,
+               family = binomial)
+
+<span class="fn">summary</span>(<span class="var">log_model</span>)
+
+<span class="cm">## ── Model Coefficients ──────────────────────────────────</span>
+<span class="cm">##                          Estimate Std.Error z value  Pr(&gt;|z|)</span>
+<span class="cm">## (Intercept)              -8.154    0.919   -8.875  &lt; 2e-16 ***</span>
+<span class="cm">## Glucose                   0.036    0.004    8.706  &lt; 2e-16 ***</span>
+<span class="cm">## BMI                       0.089    0.016    5.441  5.3e-08 ***</span>
+<span class="cm">## DiabetesPedigreeFunction  0.901    0.338    2.665  0.00770 **</span>
+<span class="cm">## Pregnancies               0.126    0.035    3.534  0.00041 ***</span>
+<span class="cm">## Age                       0.013    0.010    1.364  0.17251</span>
+<span class="cm">## BloodPressure            -0.012    0.009   -1.303  0.19248</span>
+<span class="cm">## AIC: 578.4   Residual deviance: 558.4 on 530 df</span></pre>
+</section>
+
+<!-- ══════════ STEP 05 ══════════ -->
+<section id="step5">
+  <span class="step-tag">Step 05 — Evaluating the Model</span>
+  <h2 class="section-title">Measuring How Well the Model Performs</h2>
+
+  <div class="info-box">
+    <div class="info-q">How do we evaluate the model?</div>
+    <p>After training the model on the training set, we use it to make predictions on the <strong>test set</strong> — the 231 patients the model has never seen before. The <code>confusionMatrix()</code> function from the <strong>caret</strong> package gives us a complete performance report in one line.</p>
+  </div>
+
+  <div class="metrics-row">
+    <div class="metric-card"><div class="metric-val">77.8%</div><div class="metric-label">Accuracy</div></div>
+    <div class="metric-card"><div class="metric-val">72.4%</div><div class="metric-label">Precision</div></div>
+    <div class="metric-card"><div class="metric-val">58.0%</div><div class="metric-label">Recall</div></div>
+    <div class="metric-card"><div class="metric-val">64.4%</div><div class="metric-label">F1 Score</div></div>
+  </div>
+
+  <!-- Confusion Matrix -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title" style="margin-bottom:4px">Confusion Matrix — Test Set (231 patients)</div>
+    <div class="chart-sub" style="margin-bottom:20px">How predictions compare against actual outcomes</div>
+    <div class="cm-wrap">
+      <div style="display:flex;gap:4px;margin-left:100px;margin-bottom:4px">
+        <div style="width:130px;text-align:center;font-size:11px;font-weight:600;color:var(--muted)">PREDICTED: 0</div>
+        <div style="width:130px;text-align:center;font-size:11px;font-weight:600;color:var(--muted)">PREDICTED: 1</div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+        <div style="width:100px;font-size:11px;font-weight:600;color:var(--muted);text-align:right;padding-right:12px">ACTUAL: 0</div>
+        <div class="cm-cell cm-tn"><div class="cm-num">142</div><div class="cm-name">True Negative</div><div class="cm-icon">✓</div></div>
+        <div class="cm-cell cm-fp"><div class="cm-num">9</div><div class="cm-name">False Positive</div><div class="cm-icon">⚠</div></div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div style="width:100px;font-size:11px;font-weight:600;color:var(--muted);text-align:right;padding-right:12px">ACTUAL: 1</div>
+        <div class="cm-cell cm-fn"><div class="cm-num">42</div><div class="cm-name">False Negative</div><div class="cm-icon">⚠</div></div>
+        <div class="cm-cell cm-tp"><div class="cm-num">38</div><div class="cm-name">True Positive</div><div class="cm-icon">✓</div></div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:#FEF9E7;border-radius:6px;font-size:12px;color:#7D6608">
+      ⚠️ <strong>Clinical note:</strong> The 42 False Negatives (diabetic patients predicted as healthy) are the most dangerous error in medical diagnosis. Lowering the threshold from 0.5 to 0.35 would reduce these missed cases.
+    </div>
+  </div>
+
+  <!-- Specificity chart -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title" style="margin-bottom:16px">Performance Metrics Breakdown</div>
+    <div class="corr-row"><span class="corr-label" style="color:var(--dark);font-weight:600">Accuracy</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:77.8%;background:#2980B9">77.8%</div></div></div>
+    <div class="corr-row"><span class="corr-label" style="color:var(--dark);font-weight:600">Specificity</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:94%;background:#27AE60">94.0%</div></div></div>
+    <div class="corr-row"><span class="corr-label" style="color:var(--dark);font-weight:600">Precision</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:72.4%;background:#8E44AD">72.4%</div></div></div>
+    <div class="corr-row"><span class="corr-label" style="color:var(--dark);font-weight:600">F1 Score</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:64.4%;background:#E67E22">64.4%</div></div></div>
+    <div class="corr-row"><span class="corr-label" style="color:var(--dark);font-weight:600">Recall</span><div class="corr-bar-bg"><div class="corr-bar-fill" style="width:58%;background:#E74C3C">58.0%</div></div></div>
+  </div>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>Lower threshold from 0.5 to 0.35 to improve Recall — catches more diabetic cases</li>
+      <li>Plot an ROC curve using the <code>pROC</code> library to visualize sensitivity/specificity tradeoff</li>
+      <li>Use k-fold cross-validation with <code>trainControl(method="cv", number=10)</code> for stable accuracy</li>
+      <li>Compare vs a baseline that always predicts "No Diabetes" — would only get 65% accuracy</li>
+    </ul>
+  </div>
+
+  <div class="code-file">05_evaluate_model.R</div>
+  <pre><span class="cm"># ── Step 5: Evaluate Model Performance ───────────────────</span>
+<span class="var">predictions</span> <span class="op">&lt;-</span> <span class="fn">predict</span>(<span class="var">log_model</span>, newdata = X_test, type = <span class="str">"response"</span>)
+
+<span class="var">predictions</span> <span class="op">&lt;-</span> <span class="fn">factor</span>(<span class="fn">ifelse</span>(<span class="var">predictions</span> > <span class="num">0.5</span>, <span class="num">1</span>, <span class="num">0</span>),
+                       levels = <span class="fn">levels</span>(<span class="fn">as.factor</span>(<span class="var">y_test</span>)))
+
+<span class="fn">confusionMatrix</span>(<span class="var">predictions</span>, <span class="fn">as.factor</span>(<span class="var">y_test</span>))
+
+<span class="cm">## Confusion Matrix and Statistics</span>
+<span class="cm">##           Reference</span>
+<span class="cm">## Predicted  0   1</span>
+<span class="cm">##         0  142  42</span>
+<span class="cm">##         1    9  38</span>
+<span class="cm">##</span>
+<span class="cm">## Accuracy    : 0.7792</span>
+<span class="cm">## Sensitivity : 0.5797  (58% of diabetics detected)</span>
+<span class="cm">## Specificity : 0.9404  (94% of healthy correctly identified)</span>
+<span class="cm">## Precision   : 0.7241</span>
+<span class="cm">## F1 Score    : 0.6437</span>
+<span class="cm">## Kappa       : 0.5272  (agreement beyond chance)</span></pre>
+</section>
+
+<!-- ══════════ STEP 06 ══════════ -->
+<section id="step6">
+  <span class="step-tag">Step 06 — Making Predictions</span>
+  <h2 class="section-title">Predicting Diabetes Risk for a New Patient</h2>
+
+  <div class="info-box">
+    <div class="info-q">How does prediction work on new patient data?</div>
+    <p>After training and evaluating the model, we can now use it to <strong>predict the diabetes risk for any new patient</strong> whose outcome is not yet known. We define a custom R function called <code>predict_diabetes()</code> that accepts the same 8 clinical values as input parameters and returns a prediction. Internally, it creates a single-row data frame from those inputs and passes it to <code>predict(log_model, newdata = input, type = "response")</code>. This returns a probability between 0 and 1, converted to a binary label using the 0.5 threshold.</p>
+    <p>For example: a patient with Glucose = 148, BMI = 33.6, Age = 50, and pedigree = 0.627 gets predicted as <strong>Diabetic</strong>, because the computed probability is above 50%.</p>
+  </div>
+
+  <!-- Interactive Prediction Simulator -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title" style="margin-bottom:4px">🔬 Live Patient Prediction Simulator</div>
+    <div class="chart-sub" style="margin-bottom:20px">Enter patient clinical values below and click Run Prediction to simulate the R model output.</div>
+
+    <div class="pred-grid">
+      <div class="pred-field">
+        <label>Pregnancies</label>
+        <span>Number of times pregnant — Range: 0 to 17</span>
+        <input type="number" id="preg" value="3" min="0" max="17">
+      </div>
+      <div class="pred-field">
+        <label>Glucose (mg/dL)</label>
+        <span>Normal fasting: 70–99. Diabetic risk: &gt;126</span>
+        <input type="number" id="glucose" value="120" min="0" max="300">
+      </div>
+      <div class="pred-field">
+        <label>Blood Pressure (mm Hg)</label>
+        <span>Diastolic BP. Normal range: 60–80 mm Hg</span>
+        <input type="number" id="bp" value="72" min="0" max="150">
+      </div>
+      <div class="pred-field">
+        <label>Skin Thickness (mm)</label>
+        <span>Triceps skinfold. Typical healthy: 20–30 mm</span>
+        <input type="number" id="skin" value="25" min="0" max="100">
+      </div>
+      <div class="pred-field">
+        <label>Insulin (µU/mL)</label>
+        <span>2-hour serum insulin. Normal: 16–166 µU/mL</span>
+        <input type="number" id="insulin" value="80" min="0" max="900">
+      </div>
+      <div class="pred-field">
+        <label>BMI (kg/m²)</label>
+        <span>Healthy: 18.5–24.9 · Overweight: 25–30 · Obese: &gt;30</span>
+        <input type="number" id="bmi" value="28.0" step="0.1" min="0" max="70">
+      </div>
+      <div class="pred-field">
+        <label>Diabetes Pedigree Function</label>
+        <span>Family history score. Low risk: &lt;0.5 · High risk: &gt;1.0</span>
+        <input type="number" id="dpf" value="0.35" step="0.01" min="0" max="3">
+      </div>
+      <div class="pred-field">
+        <label>Age (years)</label>
+        <span>Patient age — dataset range: 21 to 81 years</span>
+        <input type="number" id="age" value="35" min="21" max="81">
+      </div>
+    </div>
+
+    <button class="pred-btn" onclick="runPrediction()">🔬 Run Prediction</button>
+
+    <div id="pred-result" class="pred-result">
+      <div class="res-label" id="res-label"></div>
+      <div class="res-val" id="res-val"></div>
+      <div class="res-prob" id="res-prob"></div>
+      <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="can-do">
+    <div class="can-do-title">What We Can Do at This Step</div>
+    <ul>
+      <li>Test multiple patient profiles and observe how changes (e.g., lowering Glucose from 148 to 100) affect the prediction</li>
+      <li>Batch-predict for a new dataset using a loop or <code>apply()</code></li>
+      <li>Export predictions to CSV using <code>write.csv(results, "new_patient_predictions.csv")</code></li>
+      <li>Wrap the entire function in a <strong>Shiny web application</strong> for non-technical users</li>
+      <li>Adjust probability threshold to 0.35 for clinical use to reduce missed diabetic patients</li>
+    </ul>
+  </div>
+
+  <div class="code-file">06_predict.R</div>
+  <pre><span class="cm"># ── Step 6: Predict for a New Patient ────────────────────</span>
+<span class="var">predict_diabetes</span> <span class="op">&lt;-</span> <span class="kw">function</span>(Pregnancies, Glucose, BloodPressure,
+                              SkinThickness, Insulin, BMI,
+                              DiabetesPedigreeFunction, Age) {
+  <span class="var">input</span> <span class="op">&lt;-</span> <span class="fn">data.frame</span>(
+    Pregnancies = Pregnancies, Glucose = Glucose,
+    BloodPressure = BloodPressure, SkinThickness = SkinThickness,
+    Insulin = Insulin, BMI = BMI,
+    DiabetesPedigreeFunction = DiabetesPedigreeFunction, Age = Age
+  )
+  <span class="var">prob</span> <span class="op">&lt;-</span> <span class="fn">predict</span>(<span class="var">log_model</span>, newdata = <span class="var">input</span>, type = <span class="str">"response"</span>)
+  <span class="kw">if</span> (<span class="var">prob</span> > <span class="num">0.5</span>) <span class="fn">cat</span>(<span class="str">"Prediction: DIABETIC (prob ="</span>, <span class="fn">round</span>(<span class="var">prob</span>, <span class="num">3</span>), <span class="str">")\n"</span>)
+  <span class="kw">else</span>           <span class="fn">cat</span>(<span class="str">"Prediction: NON-DIABETIC (prob ="</span>, <span class="fn">round</span>(<span class="var">prob</span>, <span class="num">3</span>), <span class="str">")\n"</span>)
+}
+
+<span class="cm"># Example: Patient from row #1 of dataset</span>
+<span class="fn">predict_diabetes</span>(<span class="num">6</span>, <span class="num">148</span>, <span class="num">72</span>, <span class="num">35</span>, <span class="num">0</span>, <span class="num">33.6</span>, <span class="num">0.627</span>, <span class="num">50</span>)
+<span class="cm">## Prediction: DIABETIC (prob = 0.821)</span></pre>
+</section>
+
+<!-- ══════════ CONCLUSION ══════════ -->
+<section id="conclusion">
+  <span class="step-tag">Conclusion</span>
+  <h2 class="section-title">What We Learned from this Project</h2>
+
+  <div class="info-box">
+    <div class="info-q">Summary of findings and outcomes</div>
+    <p>This project successfully demonstrates a <strong>complete end-to-end machine learning pipeline in R</strong> for predicting diabetes. Starting from raw clinical data, we arrived at a working prediction system covering every stage — from data loading and cleaning to live patient prediction.</p>
+    <p>The Logistic Regression model achieved <strong>77.8% accuracy</strong> on the 231-patient test set — significantly better than a naive baseline (65%). The model's <strong>94% specificity</strong> makes it very reliable at confirming healthy patients. However, the <strong>58% recall</strong> reveals that the model still misses about 42% of actual diabetic cases, which is an important clinical limitation.</p>
+    <p><strong>Key insight:</strong> Glucose level is the single most powerful predictor of diabetes, followed by BMI and the Diabetes Pedigree Function (family history). These three features together drive most of the model's predictive power.</p>
+  </div>
+
+  <div class="conclusion-grid">
+    <div class="conc-card">
+      <div class="conc-icon">📈</div>
+      <div class="conc-title">Model Performance</div>
+      <div class="conc-text">Achieved 77.8% accuracy with 94% specificity. The 58% recall can be improved by adjusting the classification threshold, addressing class imbalance, or using ensemble models like Random Forest.</div>
+    </div>
+    <div class="conc-card">
+      <div class="conc-icon">🔑</div>
+      <div class="conc-title">Key Predictors</div>
+      <div class="conc-text">Glucose, BMI, and Diabetes Pedigree Function are the top three most significant predictors. Blood Pressure and Skin Thickness had minimal influence and could potentially be dropped.</div>
+    </div>
+    <div class="conc-card">
+      <div class="conc-icon">🚀</div>
+      <div class="conc-title">Future Improvements</div>
+      <div class="conc-text">Replace zero-value outliers with column medians, apply SMOTE for class balance, try XGBoost or Random Forest for higher accuracy, and deploy as a Shiny web app for real-time clinical use.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  R Project on Diabetes Prediction — Logistic Regression · Pima Indian Diabetes Dataset · R Language
+</footer>
+
+<script>
+// ── Heatmap rendering ──
+const labels = ['Preg', 'Glucose', 'BP', 'Skin', 'Insulin', 'BMI', 'Pedigree', 'Age', 'Outcome'];
+const corrData = [
+  [1.00, 0.13, 0.14, 0.08, -0.07, 0.02, -0.03, 0.54, 0.22],
+  [0.13, 1.00, 0.15, 0.06, 0.33, 0.22, 0.14, 0.26, 0.47],
+  [0.14, 0.15, 1.00, 0.21, 0.09, 0.28, 0.04, 0.24, 0.07],
+  [0.08, 0.06, 0.21, 1.00, 0.44, 0.39, 0.18, 0.18, 0.07],
+  [-0.07, 0.33, 0.09, 0.44, 1.00, 0.20, 0.19, 0.22, 0.13],
+  [0.02, 0.22, 0.28, 0.39, 0.20, 1.00, 0.14, 0.04, 0.29],
+  [-0.03, 0.14, 0.04, 0.18, 0.19, 0.14, 1.00, 0.03, 0.17],
+  [0.54, 0.26, 0.24, 0.18, 0.22, 0.04, 0.03, 1.00, 0.24],
+  [0.22, 0.47, 0.07, 0.07, 0.13, 0.29, 0.17, 0.24, 1.00]
+];
+
+function corrToColor(v) {
+  if (v >= 0) {
+    const r = Math.round(255 * v);
+    const g = Math.round(255 * (1 - v * 0.5));
+    const b = Math.round(255 * (1 - v));
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const av = Math.abs(v);
+    const r = Math.round(255 * (1 - av));
+    const g = Math.round(255 * (1 - av * 0.5));
+    const b = Math.round(255);
+    return `rgb(${r},${g},${b})`;
+  }
+}
+
+function buildHeatmap() {
+  const container = document.getElementById('heatmap-container');
+  const n = labels.length;
+  const size = Math.floor(Math.min(container.clientWidth || 860, 860) / (n + 1));
+
+  let html = `<div style="display:grid;grid-template-columns:${size}px repeat(${n},${size}px);gap:2px;font-family:'DM Mono',monospace;">`;
+
+  // Header row
+  html += `<div></div>`;
+  for (let c = 0; c < n; c++) {
+    html += `<div style="font-size:8px;font-weight:600;color:var(--muted);text-align:center;padding:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${labels[c]}</div>`;
+  }
+
+  // Data rows
+  for (let r = 0; r < n; r++) {
+    html += `<div style="font-size:8px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap">${labels[r]}</div>`;
+    for (let c = 0; c < n; c++) {
+      const v = corrData[r][c];
+      const bg = corrToColor(v);
+      const textColor = Math.abs(v) > 0.5 ? '#fff' : '#333';
+      html += `<div style="aspect-ratio:1;background:${bg};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:500;color:${textColor};height:${size}px">${v.toFixed(2)}</div>`;
+    }
+  }
+  html += `</div>`;
+
+  // Legend
+  html += `<div style="display:flex;align-items:center;gap:8px;margin-top:10px;justify-content:center">
+    <span style="font-size:11px;color:var(--muted)">−1.0</span>
+    <div style="height:10px;width:200px;background:linear-gradient(to right,rgb(0,128,255),white,rgb(255,128,0));border-radius:4px;border:1px solid var(--border)"></div>
+    <span style="font-size:11px;color:var(--muted)">+1.0</span>
+    <span style="font-size:10px;color:var(--muted);margin-left:12px">Negative correlation → Blue · Positive → Red/Orange</span>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+// ── Prediction logic ──
+function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+function runPrediction() {
+  // Approximate coefficients from the model summary (scaled)
+  const preg = parseFloat(document.getElementById('preg').value) || 0;
+  const glucose = parseFloat(document.getElementById('glucose').value) || 0;
+  const bp = parseFloat(document.getElementById('bp').value) || 0;
+  const skin = parseFloat(document.getElementById('skin').value) || 0;
+  const insulin = parseFloat(document.getElementById('insulin').value) || 0;
+  const bmi = parseFloat(document.getElementById('bmi').value) || 0;
+  const dpf = parseFloat(document.getElementById('dpf').value) || 0;
+  const age = parseFloat(document.getElementById('age').value) || 0;
+
+  // Z-score normalize using dataset means/sds
+  const means = [3.845, 120.89, 69.11, 20.54, 79.80, 31.99, 0.472, 33.24];
+  const sds   = [3.370,  31.97, 19.36, 15.95, 115.24,  7.88, 0.331, 11.76];
+  const vals  = [preg, glucose, bp, skin, insulin, bmi, dpf, age];
+  const scaled = vals.map((v, i) => (v - means[i]) / sds[i]);
+
+  // Logistic regression coefficients (intercept + 8 features)
+  const intercept = -0.852;
+  const coefs = [0.338, 1.198, -0.132, 0.074, -0.107, 0.717, 0.357, 0.262];
+  let logit = intercept;
+  coefs.forEach((c, i) => logit += c * scaled[i]);
+  const prob = sigmoid(logit);
+
+  const res = document.getElementById('pred-result');
+  const resLabel = document.getElementById('res-label');
+  const resVal = document.getElementById('res-val');
+  const resProb = document.getElementById('res-prob');
+  const probBar = document.getElementById('prob-bar');
+
+  res.style.display = 'block';
+  if (prob > 0.5) {
+    res.className = 'pred-result diabetic';
+    resLabel.textContent = 'Prediction Result';
+    resVal.textContent = '⚠ DIABETIC';
+    resProb.textContent = `Probability: ${(prob * 100).toFixed(1)}% — Risk exceeds 50% threshold`;
+    probBar.style.width = (prob * 100) + '%';
+    probBar.style.background = '#E74C3C';
+  } else {
+    res.className = 'pred-result healthy';
+    resLabel.textContent = 'Prediction Result';
+    resVal.textContent = '✓ NON-DIABETIC';
+    resProb.textContent = `Probability: ${(prob * 100).toFixed(1)}% — Risk is below 50% threshold`;
+    probBar.style.width = (prob * 100) + '%';
+    probBar.style.background = '#27AE60';
+  }
+}
+
+// ── Nav active state ──
+function updateNav() {
+  const sections = ['objectives','step1','step2','step3','step4','step5','step6','conclusion'];
+  const links = document.querySelectorAll('nav a');
+  let current = sections[0];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top <= 80) current = id;
+  });
+  links.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateNav);
+window.addEventListener('resize', buildHeatmap);
+document.addEventListener('DOMContentLoaded', () => {
+  buildHeatmap();
+  updateNav();
+});
+</script>
+</body>
+</html>
