@@ -64,4 +64,4 @@ Run scripts step-by-step.
 This project demonstrates a complete data science workflow from data preprocessing to prediction.
 
 ## 🙌 Author
-Your Name
+**Yashika**
